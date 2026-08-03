@@ -21,12 +21,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .archive/part-* | base64 --decode > .archive/crypto-pulse-analyzer-v2.zip
-          rm -rf .archive/unpacked
-          mkdir -p .archive/unpacked
-          unzip -q .archive/crypto-pulse-analyzer-v2.zip -d .archive/unpacked
-          cp -a .archive/unpacked/btc-15m-analyzer/. ./
+          cat .archive/part-* | base64 --decode > .archive/crypto-pulse-source.zip
+          unzip -qo .archive/crypto-pulse-source.zip -d .
           rm -rf .archive
+
+      - name: Build application
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install
+          npm run build
 
       - name: Commit imported application
         shell: bash
