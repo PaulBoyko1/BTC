@@ -26,7 +26,9 @@ jobs:
           cat \
             .archive/part-00 \
             .archive/part-01 \
-            .archive/part-02a \
+            .archive/part-02a-00 \
+            .archive/part-02a-01 \
+            .archive/part-02a-02 \
             .archive/part-02b \
             .archive/part-03-00 \
             .archive/part-03-01 \

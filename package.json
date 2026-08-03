@@ -1,0 +1,14 @@
+{
+  "name": "crypto-pulse-analyzer",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "check": "tsc --noEmit",
+    "serve": "python3 -m http.server 4173"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
