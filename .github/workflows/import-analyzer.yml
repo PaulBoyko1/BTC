@@ -1,0 +1,39 @@
+name: Import Crypto Pulse Analyzer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".archive/complete"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Reconstruct and extract application
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .archive/part-* | base64 --decode > .archive/crypto-pulse-analyzer-v2.zip
+          rm -rf .archive/unpacked
+          mkdir -p .archive/unpacked
+          unzip -q .archive/crypto-pulse-analyzer-v2.zip -d .archive/unpacked
+          cp -a .archive/unpacked/btc-15m-analyzer/. ./
+          rm -rf .archive
+
+      - name: Commit imported application
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Crypto Pulse BTC analyzer v2"
+          git push
