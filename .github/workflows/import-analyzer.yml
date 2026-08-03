@@ -17,15 +17,26 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Reconstruct and extract application
+      - name: Reconstruct and verify application archive
         shell: bash
         run: |
           set -euo pipefail
-          cat .archive/part-* | base64 --decode > .archive/crypto-pulse-source.zip
+          cat \
+            .archive/part-00 \
+            .archive/part-01 \
+            .archive/part-02a \
+            .archive/part-02b \
+            .archive/part-03-00 \
+            .archive/part-03-01 \
+            .archive/part-03-02 \
+            .archive/part-03-03 \
+            .archive/part-03-04 \
+            | base64 --decode > .archive/crypto-pulse-source.zip
+          echo "a21a588d9774abd0d3b6e153f3559cdf92bf281603dafe788612fe57268d6378  .archive/crypto-pulse-source.zip" | sha256sum --check
           unzip -qo .archive/crypto-pulse-source.zip -d .
           rm -rf .archive
 
-      - name: Build application
+      - name: Install and build application
         shell: bash
         run: |
           set -euo pipefail
