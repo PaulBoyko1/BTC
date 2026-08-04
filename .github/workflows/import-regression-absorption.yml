@@ -29,7 +29,7 @@ jobs:
           acd123a80f74c73539f9d6b8e7c24205cb6ea72443fb1a565785702fc49bf70f  .rea-import/part-02
           6dd4c080686982d64b677bc1ee9c37ff9c78d605296eb78779ae65ab0e4c9d18  .rea-import/part-03-0
           ae3d5fb84d1836733724a02a3ea374a419756a98bfee1cfa22c39bc8374b7e46  .rea-import/part-03-1-0
-          dbc8d6e3bb6b12b38baea9b1a0f087eee4b12b185623642c2fc04b7b8483e79b  .rea-import/part-03-1-1
+          1e68db93e50ce50e6ba142315db758ce806bcf82e3cff2d64a9a8689fd9927e7  .rea-import/part-03-1-1.hex
           244af251b7fc3133f25d5a7de511a8a97ab1a13a114bc9279a49c578158955fd  .rea-import/part-03-1-2
           d49949bce471ea2c62dd5ca92edd492a4ef508da20bbb286927c2ddae55fac37  .rea-import/part-03-2
           13c58dc5d3f19d8f06e308b04dcd620e06f943f52b620b91d982216a487cedec  .rea-import/part-04
@@ -51,7 +51,38 @@ jobs:
           50912244f0810899068b2100b093e9f0d59fdcfd8de8aefd645e733f9b5987f6  .rea-import/part-12
           EOF
           sha256sum --check /tmp/rea-chunks.sha256
-          cat .rea-import/part-* | base64 --decode > /tmp/rea-update.zip
+          python3 - <<'PY'
+          from pathlib import Path
+          source = Path('.rea-import/part-03-1-1.hex').read_text().strip()
+          Path('/tmp/part-03-1-1').write_bytes(bytes.fromhex(source))
+          PY
+          cat \
+            .rea-import/part-00 \
+            .rea-import/part-01 \
+            .rea-import/part-02 \
+            .rea-import/part-03-0 \
+            .rea-import/part-03-1-0 \
+            /tmp/part-03-1-1 \
+            .rea-import/part-03-1-2 \
+            .rea-import/part-03-2 \
+            .rea-import/part-04 \
+            .rea-import/part-05 \
+            .rea-import/part-06 \
+            .rea-import/part-07 \
+            .rea-import/part-08-0 \
+            .rea-import/part-08-1 \
+            .rea-import/part-08-2 \
+            .rea-import/part-09-0 \
+            .rea-import/part-09-1 \
+            .rea-import/part-09-2 \
+            .rea-import/part-10-0 \
+            .rea-import/part-10-1 \
+            .rea-import/part-10-2 \
+            .rea-import/part-11-0 \
+            .rea-import/part-11-1 \
+            .rea-import/part-11-2 \
+            .rea-import/part-12 \
+            | base64 --decode > /tmp/rea-update.zip
           echo "25d440acf3b9ec34921e05247f2cce66e7aa7d6ab1ed9fc80fae610d52ffc5c6  /tmp/rea-update.zip" | sha256sum --check
           unzip -qo /tmp/rea-update.zip -d .
           rm -rf .rea-import .github/workflows/import-regression-absorption.yml
