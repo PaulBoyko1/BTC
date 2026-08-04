@@ -1,0 +1,74 @@
+name: Import Regression Extreme Absorption
+
+on:
+  push:
+    branches: [feature/regression-extreme-absorption]
+    paths:
+      - ".rea-import/complete"
+
+permissions:
+  contents: write
+
+jobs:
+  import-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/regression-extreme-absorption
+
+      - name: Verify transport chunks and reconstruct update
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/rea-chunks.sha256 <<'EOF'
+          b03d7f5ab9aebb202bab030593b784fb331aeee985bd9d57777ad0176159a05c  .rea-import/part-00
+          6ef2b74e27531bd5f78ae038023b25a1185259d3eae8d16f65c07c9ca441310f  .rea-import/part-01
+          acd123a80f74c73539f9d6b8e7c24205cb6ea72443fb1a565785702fc49bf70f  .rea-import/part-02
+          53b5d40028aa3e6ecdf3284c47a6d0ff28d99bee963fce99e159be5bd3e5d45e  .rea-import/part-03
+          13c58dc5d3f19d8f06e308b04dcd620e06f943f52b620b91d982216a487cedec  .rea-import/part-04
+          514d0c7c7b5305ba83327e472fed19adce67a4f503faad8e99b76914c8ba8980  .rea-import/part-05
+          f0be342256ddbeb5f7a3ae12638bdde0075148ca36cc43530fcfebc69510ad39  .rea-import/part-06
+          d62fd0998b323f87cad75ed0e81cdd4646e3d84f3424f0ae8ad129d64cf3904c  .rea-import/part-07
+          b783c887b2a05eebb0e4d2a63f8cbdad1f26a6b783b0f77273f172f35797167b  .rea-import/part-08
+          4bc86b078b1e27569e1f184609b303038e03cb8328a1ee6e1194e00fc5f4acf6  .rea-import/part-09
+          9358c88c398daacb372656c4ae6626d74406c417fa0376d2ec39607a9f32d507  .rea-import/part-10
+          0d314925102e8abf658a2d48d5dbafb55c38eb2ec851fff5d251fd22023744b6  .rea-import/part-11
+          50912244f0810899068b2100b093e9f0d59fdcfd8de8aefd645e733f9b5987f6  .rea-import/part-12
+          EOF
+          sha256sum --check /tmp/rea-chunks.sha256
+          cat .rea-import/part-* | base64 --decode > /tmp/rea-update.zip
+          echo "25d440acf3b9ec34921e05247f2cce66e7aa7d6ab1ed9fc80fae610d52ffc5c6  /tmp/rea-update.zip" | sha256sum --check
+          unzip -qo /tmp/rea-update.zip -d .
+          rm -rf .rea-import .github/workflows/import-regression-absorption.yml
+
+      - name: Verify frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm install
+      - run: npm run check
+      - run: npm run build
+
+      - name: Verify backend
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r backend/requirements-dev.txt
+      - run: PYTHONPATH=backend pytest -q backend/tests
+      - run: python -m compileall -q backend/app
+
+      - name: Commit verified module
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Regression Extreme Absorption module"
+          git push origin HEAD:feature/regression-extreme-absorption
