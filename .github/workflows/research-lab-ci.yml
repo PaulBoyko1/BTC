@@ -6,6 +6,11 @@ on:
     branches: [main]
     paths:
       - "backend/**"
+      - "index.html"
+      - "legacy.html"
+      - "api-guard.js"
+      - "start-windows.bat"
+      - "start.ps1"
       - "research.html"
       - "research.css"
       - "src/research.ts"
@@ -24,6 +29,11 @@ on:
     branches: [main]
     paths:
       - "backend/**"
+      - "index.html"
+      - "legacy.html"
+      - "api-guard.js"
+      - "start-windows.bat"
+      - "start.ps1"
       - "research.html"
       - "research.css"
       - "src/research.ts"
@@ -54,6 +64,16 @@ jobs:
       - run: npm install
       - run: npm run check
       - run: npm run build
+      - name: Verify live-launcher wiring
+        run: |
+          test -f api-guard.js
+          test -f start-windows.bat
+          test -f start.ps1
+          test -f legacy.html
+          grep -q 'api-guard.js' index.html
+          grep -q 'api-guard.js' interval.html
+          grep -q 'app.interval_main:app' start-windows.bat
+          grep -q 'app.interval_main:app' start.ps1
 
   backend:
     runs-on: ubuntu-latest
