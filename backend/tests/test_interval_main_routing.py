@@ -4,19 +4,11 @@ from starlette.routing import Mount
 from app.interval_main import app
 
 
-def test_interval_api_routes_precede_root_static_mount() -> None:
-    assets_index = next(
-        index
-        for index, route in enumerate(app.router.routes)
-        if getattr(route, "path", None) == "/api/interval/assets"
-    )
-    static_index = next(
-        index
-        for index, route in enumerate(app.router.routes)
-        if isinstance(route, Mount) and route.name == "static"
-    )
+def test_root_static_mount_is_final_catch_all() -> None:
+    final_route = app.router.routes[-1]
 
-    assert assets_index < static_index
+    assert isinstance(final_route, Mount)
+    assert final_route.name == "static"
 
 
 def test_interval_assets_endpoint_is_reachable() -> None:
