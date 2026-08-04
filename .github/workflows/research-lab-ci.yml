@@ -1,4 +1,4 @@
-name: Strategy Research Lab CI
+name: Strategy Research and Interval Analyzer CI
 
 on:
   workflow_dispatch:
@@ -10,6 +10,10 @@ on:
       - "research.css"
       - "src/research.ts"
       - "dist/research.js"
+      - "interval.html"
+      - "interval.css"
+      - "src/interval.ts"
+      - "dist/interval.js"
       - "package.json"
       - "package-lock.json"
       - "tsconfig.json"
@@ -22,6 +26,10 @@ on:
       - "research.css"
       - "src/research.ts"
       - "dist/research.js"
+      - "interval.html"
+      - "interval.css"
+      - "src/interval.ts"
+      - "dist/interval.js"
       - "package.json"
       - "package-lock.json"
       - "tsconfig.json"
