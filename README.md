@@ -1,136 +1,147 @@
-# Crypto Pulse Analyzer
+# Crypto Interval Analyzer
 
-A dependency-light TypeScript research dashboard for BTC-USD with separate 15-minute and one-hour probability models, a customizable strategy backtester, paper forecast tracking, and a Pacific-time hourly above/below strike ladder.
+A fixed-expiry cryptocurrency research application for exact 15-minute and one-hour windows, current Binance prices, public prediction-market contract comparison, candlestick charts, clickable strategy presets, and historical validation.
 
-## Included
+## Important: use the FastAPI launcher for live data
 
-- Live Coinbase BTC-USD ticker and batched one-minute candles
-- Independently configurable 15-minute and one-hour models
-- Probability up/down, expected return, price range, confidence, market regime, data quality, and no-trade state
-- Correlation penalty so related indicators are not counted as independent confirmations
-- Pacific Time (`America/Los_Angeles`) throughout; PST/PDT switches automatically
-- 25 strategy ideas, with candle-testable ideas separated from future data adapters
-- No-code strategy controls for:
-  - Horizon and long/short bias
-  - Entry cadence and Pacific session
-  - Confidence and score thresholds
-  - Volume, momentum, and extension filters
-  - Target, stop, hold time, fees, and slippage
-  - EMA/volume confirmation and signal inversion
-  - Rapid-move and consolidation definitions
-- Conservative walk-forward execution when target and stop occur in the same one-minute candle
-- Hourly above/below ladder with configurable strike gap, defaulting to $100
-- Hypothetical binary-contract backtests using user-entered contract price and minimum model edge
-- Baseline directional backtests and calibration buckets
-- Local immutable paper forecast history
+The main page calls routes such as `/api/interval/live`, `/api/interval/contracts`, and `/api/interval/presets`.
 
-## Crypto Interval Analyzer
-
-The repository now also includes a FastAPI-backed fixed-expiry application with the primary tabs `15 MIN`, `1 HOUR`, `CHART`, `SETUPS`, `RESEARCH`, `DATA`, and `SETTINGS`.
-
-The initial implementation provides:
-
-- Fixed UTC quarter-hour and clock-hour interval boundaries
-- Pacific-time display by default, with user-selectable timezone
-- Public Binance spot and perpetual ticker and completed one-minute candles
-- Immutable interval references, predictions, feature snapshots, and separately stored outcomes
-- Separate direction, reversion, continuation, and uncertainty outputs
-- Calibrated probabilities only after an explicit sample and Brier-skill gate
-- Charted expiry boundaries and interval reference levels
-- Explicit order-block definitions, validation-only entry-depth selection, randomized null models, and day/block bootstrap
-
-Run the combined Interval Analyzer and Research Lab:
+A static server such as:
 
 ```bash
-cd backend
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-python -m uvicorn app.interval_main:app --reload --port 8000
+python -m http.server
 ```
 
-Open `http://localhost:8000/interval`. Detailed implementation notes and current limitations are documented in [`INTERVAL_ANALYZER.md`](INTERVAL_ANALYZER.md).
+can serve HTML and JavaScript files only. It cannot run those API routes and will return `404 File not found` for live data.
+
+### Windows — easiest method
+
+Double-click:
+
+```text
+start-windows.bat
+```
+
+The launcher creates `.venv` when needed, installs the backend requirements, opens the browser, and starts the live service at:
+
+```text
+http://localhost:8000/
+```
+
+### PowerShell
+
+```powershell
+.\start.ps1
+```
+
+### Manual startup
+
+From the repository root:
+
+```bash
+python -m venv .venv
+```
+
+Windows:
+
+```powershell
+.venv\Scripts\activate
+pip install -r backend\requirements.txt
+python -m uvicorn app.interval_main:app --app-dir backend --reload --port 8000
+```
+
+macOS or Linux:
+
+```bash
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+python -m uvicorn app.interval_main:app --app-dir backend --reload --port 8000
+```
+
+Then open `http://localhost:8000/`.
+
+## Main application
+
+The default page includes:
+
+- Exact UTC quarter-hour expiries at `X:00`, `X:15`, `X:30`, and `X:45`
+- Exact one-hour clock expiries
+- Local-time display with Pacific Time as the default
+- Binance spot and perpetual prices and completed one-minute candles
+- Current interval opening reference and countdown
+- One-minute candlestick chart
+- VWAP, expected close, expected range, and fixed expiry markers
+- Public Polymarket Up/Down quotes when a matching contract can be discovered
+- Manual contract-price fallback
+- No-fee fair-value gap and expected ROI for both sides
+- Separate reversion, continuation, uncertainty, and direction outputs
+- Ten clickable momentum, continuation, reversion, order-flow, and late-expiry presets
+- Same-minute-of-interval preset backtests
+
+The displayed fair-value gap remains explicitly **indicative and uncalibrated** unless an out-of-sample calibration record has passed the configured sample and Brier-skill gates.
+
+`No Trade` means the directional signal did not clear the selected threshold. It does not change the fixed expiration and does not hide current contract prices.
 
 ## Strategy Research and Validation Lab
 
-The repository also contains a separate FastAPI research service and dashboard for rigorous, chronological strategy validation. It does not replace the existing browser analyzer.
+Open:
 
-Initial supported scope:
-
-- Assets: BTCUSDT and ETHUSDT
-- Venue: Binance
-- Markets: spot and perpetual futures
-- Prediction horizons: 15 minutes and 1 hour
-- Strategies: regression-channel reversion, Regression Extreme Absorption, VWAP reversion, simple momentum, and breakout/retest
-
-Research controls include:
-
-- Versioned mathematical strategy definitions and parameter schemas
-- Immutable datasets and experiments with reproducibility hashes
-- UTC data-integrity validation and feature availability timestamps
-- Rolling or expanding walk-forward folds
-- Purging and embargo for overlapping label and holding windows
-- Realistic fees, spread, slippage, latency, partial-fill and funding assumptions
-- Baseline and ablation comparisons
-- In-sample versus out-of-sample degradation
-- Parameter-neighborhood robustness maps
-- Ordinary and block bootstrap stress tests
-- Benjamini-Hochberg, approximate Deflated Sharpe, and PBO diagnostics
-- Background jobs with progress and cancellation
-- JSON and CSV exports
-- No fabricated market results, probabilities, rankings, or validation counts
-
-Run the Research Lab alone:
-
-```bash
-cd backend
-python -m venv .venv
-# Windows: .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --port 8000
+```text
+http://localhost:8000/research
 ```
 
-Open `http://localhost:8000/research`. API documentation is available at `http://localhost:8000/docs`.
+The Research Lab supports:
 
-The Research Lab starts with **NO COMPLETED EXPERIMENTS**. Import completed-candle data through the API before running an experiment.
+- Versioned strategy definitions
+- Immutable datasets and experiments
+- Rolling and expanding walk-forward validation
+- Purging and embargo
+- Execution-cost scenarios
+- Baselines and ablations
+- Parameter-neighborhood analysis
+- Ordinary and block bootstrap
+- Benjamini–Hochberg, approximate Deflated Sharpe, and PBO diagnostics
+- Order-block null models and chronological validation
 
-## Important data distinction
+API documentation is available at:
 
-The static browser build uses public Coinbase price/candle data. It does **not** fabricate:
-
-- Level 2 order-book imbalance or CVD
-- Funding, open interest, basis, or liquidations
-- Deribit options IV/skew/Greeks
-- Real prediction-market bids, asks, depth, or historical contract prices
-- Cross-exchange, on-chain, news, or macro-event features
-
-The Interval Analyzer uses public Binance REST market data in its first phase. It does not represent REST polling as a native exchange WebSocket or sequence-checked L2 collector.
-
-## Run the original static analyzer
-
-The compiled JavaScript is included.
-
-```bash
-python3 -m http.server 4173
+```text
+http://localhost:8000/docs
 ```
 
-Open `http://localhost:4173`.
+## Static legacy mode
 
-Do not open `index.html` directly with a `file://` URL because browsers may restrict module and network requests.
+The original dependency-light Coinbase browser analyzer is preserved at `legacy.html`.
 
-## Rebuild
+It can be opened with a static server:
+
+```bash
+python -m http.server 4173
+```
+
+Then open:
+
+```text
+http://localhost:4173/legacy.html
+```
+
+Static legacy mode does **not** provide the FastAPI interval endpoints, live contract adapter, Research Lab database, or backend backtests.
+
+## Rebuild frontend assets
 
 ```bash
 npm install
+npm run check
 npm run build
 ```
 
-## Data and backtest limitations
+## Scope and limitations
 
-The browser loads Coinbase candles in batches, with selectable history up to 48 hours. This is suitable for validating code paths, comparing simple ideas, and rejecting obviously weak configurations. It is not sufficient evidence of a durable trading edge.
+- Public market-data access only
+- No wallet credentials
+- No order submission
+- No automatic execution
+- Historical contract P&L requires historical contract quotes, spreads, depth, and exact resolution rules
+- A model-market difference is not automatically an arbitrage, particularly when the contract and model use different reference-price sources
 
-Hourly contract P&L is hypothetical until real historical contract quotes, spread, depth, fees, and exact resolution rules are imported. BTC settlement outcomes come from candle data; user-entered contract prices do not.
-
-For research and education only. No automatic execution or real-money trading is included.
+For research and education only.
