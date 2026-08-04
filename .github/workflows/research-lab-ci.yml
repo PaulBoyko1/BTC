@@ -1,6 +1,7 @@
 name: Strategy Research Lab CI
 
 on:
+  workflow_dispatch:
   pull_request:
     branches: [main]
     paths:
