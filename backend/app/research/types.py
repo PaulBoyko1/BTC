@@ -5,7 +5,7 @@ from enum import StrEnum
 from typing import Any, Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class MarketType(StrEnum):
@@ -63,12 +63,19 @@ class ParameterSearchMethod(StrEnum):
 
 
 class Candle(BaseModel):
-    """Completed market candle with explicit source and availability times."""
+    """A completed market candle with explicit event and availability times.
+
+    Timestamps are Unix seconds in UTC. Optional microstructure fields remain
+    nullable so candle-only strategies can be tested without fabricating them.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     timestamp: int = Field(description="Candle open timestamp, UTC epoch seconds")
-    availability_timestamp: int | None = Field(default=None, description="Earliest time the completed candle was available")
+    availability_timestamp: int | None = Field(
+        default=None,
+        description="Earliest timestamp at which the completed candle was available",
+    )
     exchange_timestamp: int | None = None
     receipt_timestamp: int | None = None
     open: float
