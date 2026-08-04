@@ -15,8 +15,10 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.research.types import Candle, MarketType
 
 from .bootstrap import bootstrap_confidence_interval
+from .contracts import PolymarketPublicAdapter, compare_contracts
 from .null_models import run_order_block_null_model
 from .order_blocks import chronological_order_block_validation
+from .presets import PRESETS, backtest_preset, current_preset_rows
 from .service import IntervalService
 from .storage import IntervalStorage
 from .types import Horizon, NullModelRequest, OrderBlockConfig, SUPPORTED_ASSETS
@@ -29,6 +31,7 @@ MIGRATION_PATH = BACKEND_ROOT / "migrations" / "002_crypto_interval_analyzer.sql
 
 storage = IntervalStorage(DATABASE_PATH, MIGRATION_PATH)
 service = IntervalService(storage)
+contract_adapter = PolymarketPublicAdapter()
 router = APIRouter(tags=["crypto-interval-analyzer"])
 
 
@@ -83,6 +86,91 @@ def chart(
 ) -> dict[str, Any]:
     try:
         return service.chart(asset, market_type, limit)
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+
+@router.get("/api/interval/contracts/current")
+def current_contracts(
+    asset: str = Query(default="BTCUSDT"),
+    market_type: MarketType = Query(default=MarketType.SPOT),
+    horizon: Horizon = Query(default=Horizon.FIFTEEN_MINUTES),
+    manual_up: float | None = Query(default=None, gt=0, lt=1),
+    manual_down: float | None = Query(default=None, gt=0, lt=1),
+) -> dict[str, Any]:
+    try:
+        analysis = service.live(asset, market_type, horizon, persist=False)
+        quote = contract_adapter.current_quote(
+            asset=asset,
+            horizon=horizon,
+            start_timestamp=analysis.interval_start_timestamp,
+            expiry_timestamp=analysis.expiry_timestamp,
+        )
+        return compare_contracts(analysis, quote, manual_up=manual_up, manual_down=manual_down)
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+
+@router.get("/api/interval/presets")
+def preset_signals(
+    asset: str = Query(default="BTCUSDT"),
+    market_type: MarketType = Query(default=MarketType.SPOT),
+    horizon: Horizon = Query(default=Horizon.FIFTEEN_MINUTES),
+    manual_up: float | None = Query(default=None, gt=0, lt=1),
+    manual_down: float | None = Query(default=None, gt=0, lt=1),
+) -> dict[str, Any]:
+    try:
+        analysis = service.live(asset, market_type, horizon, persist=False)
+        quote = contract_adapter.current_quote(
+            asset=asset,
+            horizon=horizon,
+            start_timestamp=analysis.interval_start_timestamp,
+            expiry_timestamp=analysis.expiry_timestamp,
+        )
+        comparison = compare_contracts(analysis, quote, manual_up=manual_up, manual_down=manual_down)
+        return {
+            "asset": asset,
+            "market_type": market_type.value,
+            "horizon": horizon.value,
+            "interval_start_timestamp": analysis.interval_start_timestamp,
+            "expiry_timestamp": analysis.expiry_timestamp,
+            "elapsed_seconds": max(0, analysis.generated_timestamp - analysis.interval_start_timestamp),
+            "contract": comparison,
+            "presets": current_preset_rows(analysis, comparison),
+        }
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(503, str(exc)) from exc
+
+
+@router.get("/api/interval/presets/{preset_id}/backtest")
+def preset_backtest(
+    preset_id: str,
+    asset: str = Query(default="BTCUSDT"),
+    market_type: MarketType = Query(default=MarketType.SPOT),
+    horizon: Horizon = Query(default=Horizon.FIFTEEN_MINUTES),
+    elapsed_seconds: int | None = Query(default=None, ge=60, le=3600),
+    minimum_score: float | None = Query(default=None, ge=0, le=1),
+    limit: int = Query(default=1000, ge=200, le=1000),
+) -> dict[str, Any]:
+    if preset_id not in {preset.preset_id for preset in PRESETS}:
+        raise HTTPException(404, f"unknown preset {preset_id}")
+    try:
+        analysis = service.live(asset, market_type, horizon, persist=False)
+        batch = service.adapter.candles(asset, market_type, limit=limit)
+        if not batch.candles:
+            raise RuntimeError("market data unavailable: " + "; ".join(batch.data_status.reasons))
+        elapsed = elapsed_seconds
+        if elapsed is None:
+            elapsed = max(60, analysis.generated_timestamp - analysis.interval_start_timestamp)
+        return backtest_preset(
+            list(batch.candles),
+            horizon=horizon,
+            preset_id=preset_id,
+            elapsed_seconds=elapsed,
+            minimum_score=minimum_score,
+        )
+    except KeyError as exc:
+        raise HTTPException(404, str(exc)) from exc
     except (ValueError, RuntimeError) as exc:
         raise HTTPException(503, str(exc)) from exc
 
