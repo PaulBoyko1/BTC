@@ -31,10 +31,18 @@ jobs:
           514d0c7c7b5305ba83327e472fed19adce67a4f503faad8e99b76914c8ba8980  .rea-import/part-05
           f0be342256ddbeb5f7a3ae12638bdde0075148ca36cc43530fcfebc69510ad39  .rea-import/part-06
           d62fd0998b323f87cad75ed0e81cdd4646e3d84f3424f0ae8ad129d64cf3904c  .rea-import/part-07
-          b783c887b2a05eebb0e4d2a63f8cbdad1f26a6b783b0f77273f172f35797167b  .rea-import/part-08
-          4bc86b078b1e27569e1f184609b303038e03cb8328a1ee6e1194e00fc5f4acf6  .rea-import/part-09
-          9358c88c398daacb372656c4ae6626d74406c417fa0376d2ec39607a9f32d507  .rea-import/part-10
-          0d314925102e8abf658a2d48d5dbafb55c38eb2ec851fff5d251fd22023744b6  .rea-import/part-11
+          ca07172b1fa93845f30a4e662053440510e1e19e486177e41ee1cba9c68f315d  .rea-import/part-08-0
+          6fc15368180317c0f0fed48a9744d6b8c12ee7ffaaa3ce06bf1c0f41a8c6091c  .rea-import/part-08-1
+          2e96befeaecfa916ff00067a74bf93e1c6f94da1f73cd10aedc8ae155950b067  .rea-import/part-08-2
+          cc8923888e5efca156b1ece70d215badd6fdcbbcafa819101ee3cd63eb3c8e80  .rea-import/part-09-0
+          09bbdbdb56b1ae30ad9bd92694be4723d4c269d54966abe426a968e1d8e78007  .rea-import/part-09-1
+          dd121504bac5d91cbe82eb82a899fcbb4fcc06478d5a3c3d784ed94a27ec5d65  .rea-import/part-09-2
+          4987154d65d408fb551451a694d8ea62260d46122eb47b518d5107da0b7f75fb  .rea-import/part-10-0
+          7be63fe51e16967e3f0f58e63cdea866d8768759f7e73012e1c72a3b9d77b18c  .rea-import/part-10-1
+          aabefbbdd477b67c8b28becd64edfcf57070a18fec94df5a3f1e1edf0610edb7  .rea-import/part-10-2
+          14ac424295f93307659ce93ccf9b2a4c5f1f516d4cdb59bf8885d898e0c9462b  .rea-import/part-11-0
+          a7639edbeeba1196fd8dea0443616dc331db213b281c7f34d170db99081f3a66  .rea-import/part-11-1
+          1e7e586a1668cbb5f856488ad25fbdd182217ba6615c8e0c880a37567df25a9a  .rea-import/part-11-2
           50912244f0810899068b2100b093e9f0d59fdcfd8de8aefd645e733f9b5987f6  .rea-import/part-12
           EOF
           sha256sum --check /tmp/rea-chunks.sha256
