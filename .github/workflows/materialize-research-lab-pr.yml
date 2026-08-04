@@ -1,0 +1,108 @@
+name: Verify and Materialize Strategy Research Lab
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".research-import/**"
+      - ".github/workflows/materialize-research-lab-pr.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Verify transport and reconstruct source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/research-chunks.sha256 <<'EOF'
+          9191c834e16c503dd006b56b4452e6b01eb476f0ea950945ef5bab6dd6b67c81  .research-import/part-00
+          0f5d480e09da23f6dbb2994f06416c691a28a9ebd83f057d048e4d92decff53e  .research-import/part-01
+          a2fb97db3660e061d4e233170743016c046ac870b903c87574bc3b3bfc93ea10  .research-import/part-02
+          296b6306e5b1d783a26d6bcef537f93ec9df34c1fb11473ee901f7d43a8a66ec  .research-import/part-03
+          9a6fcdd83543e5089438b73a05c3686f36d13cfcb21d226b89c0bbc35798e894  .research-import/part-04
+          21fe1c701f099a9e785f218b226edeaf2c2cd74dfcce6765ddb0c269da94cd07  .research-import/part-05
+          ab1134c6f3e578ab9828e4a3f7a53bd42a45e474c09d12b37af792c232e8cbfa  .research-import/part-06
+          a79f0d1dab15a403fe7394a3be17b17bdc33211b250cd5651e2ce1c9fc85364b  .research-import/part-07
+          58ee20950ac6d4d8dcfb53b96e13dd6694c09099b9ee29c4ca39880f7fb82c50  .research-import/part-08
+          276411ab5afb20bcdcdf0bc7c2b083e5ff22e01152d81b99765e0953f40dcf1d  .research-import/part-09
+          bc85df931ebf0c163c91ab28fe4bc1ef96e2b2cab8c8c770338109e4af185d60  .research-import/part-10
+          cb7511e27ef30bec10627dd27a8fa4594e4e778776fc4a102b7405b7e989de42  .research-import/part-11
+          c29c1b33f3d18e5d9e4408627dcf0b82e7836cf96fa0b581fb7ffb10e3170315  .research-import/part-12
+          72cbff0f19e16d117f79233cb7e6d83d4aa7e47678784db72f40181c86b31807  .research-import/part-13
+          6879eeaa207c2b5bda2e7dd0b5bdea221d5f458163e9f874ff60eca31ac6f4f6  .research-import/part-14
+          9ea28780a8cf9034d2e4a90c8ad34a5ab15afcd41bf784c179eb7168cf5d4e1a  .research-import/part-15
+          9f7f498603b05e9e066829ce8b61223250510b89605a84b1e8efdd4c7592e456  .research-import/part-16
+          245b80f92cecc280ab9af5605b1c9e10f3e4ca5bbc6652fd6bf1743b5f484d9d  .research-import/part-17
+          d2e806ba7f1364a9118dd71e86c417de2153d7feb7ec69e5226b96bdd1e8a045  .research-import/part-18
+          58d3beebd73cf19553ba691c52b0115b34a442054ad7ba22ccdcb795276e0aa9  .research-import/part-19
+          EOF
+          sha256sum --check /tmp/research-chunks.sha256
+          base64 --decode .research-import/part-08 > /tmp/part-08
+          base64 --decode .research-import/part-10 > /tmp/part-10
+          cat \
+            .research-import/part-00 \
+            .research-import/part-01 \
+            .research-import/part-02 \
+            .research-import/part-03 \
+            .research-import/part-04 \
+            .research-import/part-05 \
+            .research-import/part-06 \
+            .research-import/part-07 \
+            /tmp/part-08 \
+            .research-import/part-09 \
+            /tmp/part-10 \
+            .research-import/part-11 \
+            .research-import/part-12 \
+            .research-import/part-13 \
+            .research-import/part-14 \
+            .research-import/part-15 \
+            .research-import/part-16 \
+            .research-import/part-17 \
+            .research-import/part-18 \
+            .research-import/part-19 \
+            > /tmp/research-lab.b64
+          echo "dcdab07688382de7e5a5332d29db80e51613a2cd02fc75e1f8a7e95e265f528e  /tmp/research-lab.b64" | sha256sum --check
+          base64 --decode /tmp/research-lab.b64 > /tmp/research-lab.tar.xz
+          echo "12a2ee356da6a6edc84ab7f084dab7a971884d34e0c025a71e9d04ed93a53216  /tmp/research-lab.tar.xz" | sha256sum --check
+          tar -xJf /tmp/research-lab.tar.xz
+          rm -rf .research-import
+
+      - name: Verify frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm install
+      - run: npm run check
+      - run: npm run build
+
+      - name: Verify backend
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r backend/requirements-dev.txt
+      - run: PYTHONPATH=backend pytest -q backend/tests
+      - run: python -m compileall -q backend/app
+
+      - name: Commit verified source
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Strategy Research and Validation Lab"
+          git push origin HEAD:${{ github.head_ref }}
