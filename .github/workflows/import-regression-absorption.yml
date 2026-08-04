@@ -1,10 +1,11 @@
 name: Import Regression Extreme Absorption
 
 on:
-  push:
-    branches: [feature/regression-extreme-absorption]
+  pull_request:
+    branches: [main]
     paths:
       - ".rea-import/complete"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,7 +17,7 @@ jobs:
       - name: Check out feature branch
         uses: actions/checkout@v4
         with:
-          ref: feature/regression-extreme-absorption
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Verify transport chunks and reconstruct update
         shell: bash
@@ -79,4 +80,4 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "Add Regression Extreme Absorption module"
-          git push origin HEAD:feature/regression-extreme-absorption
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}
