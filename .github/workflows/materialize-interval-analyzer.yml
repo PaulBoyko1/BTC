@@ -60,8 +60,7 @@ jobs:
           base64 --decode /tmp/interval-update.b64 > /tmp/interval-update.tar.xz
           echo "4ad2e2cf054a495258f92989ccf5a5829c4cb6adddd7c6339b94348ecc3e2a6f  /tmp/interval-update.tar.xz" | sha256sum --check
           tar -xJf /tmp/interval-update.tar.xz
-          rm -rf .interval-import
-          rm -f .github/workflows/materialize-interval-analyzer.yml
+          git checkout HEAD -- .github/workflows/research-lab-ci.yml
 
       - name: Verify frontend
         uses: actions/setup-node@v4
@@ -89,6 +88,14 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add \
+            backend/app/interval \
+            backend/app/interval_main.py \
+            backend/migrations/002_crypto_interval_analyzer.sql \
+            backend/tests/test_interval.py \
+            interval.html \
+            interval.css \
+            src/interval.ts \
+            dist/interval.js
           git commit -m "Add Crypto Interval Analyzer foundation"
           git push origin HEAD:${{ github.head_ref }}
