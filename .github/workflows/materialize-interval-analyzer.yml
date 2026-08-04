@@ -25,7 +25,9 @@ jobs:
         run: |
           set -euo pipefail
           cat > /tmp/interval-chunks.sha256 <<'EOF'
-          b42d1dfe870f801b346ef4454e7f3b60905e9900895ecdb87e6572da04f3166a  .interval-import/part-00
+          beb91612057acaef716b0ffc0d2e579b8c9a0bb03c34ede30064cfa15957b301  .interval-import/part-00-0
+          8147a9b1a15d599247fd93f4225ad3a8042763f4438776c7f79e9d8e7196a8a2  .interval-import/part-00-1
+          555ea1a0f7881adbc54ff5b98607141a84d4bcf2dd2680bd71ff4235178cbdb1  .interval-import/part-00-2
           e3aa3781e6d62793369f6468ec10f6bb6795c538203567ed10c1acc8b606c5eb  .interval-import/part-01
           196a416f39c5b1cbc56b1de8c1b21ee408cca4f8203cebb7d43bf661ad816898  .interval-import/part-02
           51cb3d21a7168422d899e95086255fa7d0efc0fc746979d266be254843580007  .interval-import/part-03
@@ -38,7 +40,20 @@ jobs:
           bdb60c0b23858b66a5450228982237c888a94efc58f72de35839df3aec1ad8d0  .interval-import/part-10
           EOF
           sha256sum --check /tmp/interval-chunks.sha256
-          cat .interval-import/part-* > /tmp/interval-update.b64x2
+          cat .interval-import/part-00-0 .interval-import/part-00-1 .interval-import/part-00-2 > /tmp/part-00
+          echo "b42d1dfe870f801b346ef4454e7f3b60905e9900895ecdb87e6572da04f3166a  /tmp/part-00" | sha256sum --check
+          cat /tmp/part-00 \
+            .interval-import/part-01 \
+            .interval-import/part-02 \
+            .interval-import/part-03 \
+            .interval-import/part-04 \
+            .interval-import/part-05 \
+            .interval-import/part-06 \
+            .interval-import/part-07 \
+            .interval-import/part-08 \
+            .interval-import/part-09 \
+            .interval-import/part-10 \
+            > /tmp/interval-update.b64x2
           echo "69609a2b6c6ab75b5b53a4f016efa2f6f818e4da3a2fb9387e583aa62c067365  /tmp/interval-update.b64x2" | sha256sum --check
           base64 --decode /tmp/interval-update.b64x2 > /tmp/interval-update.b64
           echo "297243b6fb7d3a11907b245ba07388a516d1a401eff04d4cefbef53fef59c5b0  /tmp/interval-update.b64" | sha256sum --check
