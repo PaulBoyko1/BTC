@@ -2,14 +2,12 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from hashlib import sha256
-from pathlib import Path
 from typing import Any
 
 from app.research.types import Candle, MarketType
 
 from .clock import current_fixed_window
-from .data import BinancePublicAdapter
+from .data import ResilientPublicAdapter
 from .model import analyze_interval
 from .storage import IntervalStorage
 from .types import Horizon, IntervalAnalysis, IntervalWindow, PredictionOutcome, SUPPORTED_ASSETS
@@ -25,11 +23,11 @@ class IntervalService:
     def __init__(
         self,
         storage: IntervalStorage,
-        adapter: BinancePublicAdapter | None = None,
+        adapter: Any | None = None,
         cache_seconds: float = 3.0,
     ) -> None:
         self.storage = storage
-        self.adapter = adapter or BinancePublicAdapter()
+        self.adapter = adapter or ResilientPublicAdapter()
         self.cache_seconds = cache_seconds
         self._cache: dict[tuple[str, str, str], CacheEntry] = {}
 
@@ -46,13 +44,13 @@ class IntervalService:
         ]
 
     @staticmethod
-    def _reference(candles: list[Candle], start_timestamp: int) -> tuple[float, str]:
+    def _reference(candles: list[Candle], start_timestamp: int, exchange: str = "binance") -> tuple[float, str]:
         exact = next((candle for candle in candles if candle.timestamp == start_timestamp), None)
         if exact:
-            return exact.open, "binance_one_minute_interval_open"
+            return exact.open, f"{exchange}_one_minute_interval_open"
         prior = [candle for candle in candles if candle.timestamp < start_timestamp]
         if prior:
-            return prior[-1].close, "last_completed_candle_before_interval"
+            return prior[-1].close, f"{exchange}_last_completed_candle_before_interval"
         raise ValueError("interval reference price is unavailable")
 
     def live(
@@ -75,10 +73,11 @@ class IntervalService:
         if not batch.candles:
             raise RuntimeError("market data unavailable: " + "; ".join(batch.data_status.reasons))
         candles = list(batch.candles)
+        exchange = batch.exchange
         if persist:
-            self.resolve_expired(asset, market_type, candles, now)
+            self.resolve_expired(asset, market_type, candles, now, exchange=exchange)
         fixed = current_fixed_window(now, horizon)
-        reference, source = self._reference(candles, fixed.start_timestamp)
+        reference, source = self._reference(candles, fixed.start_timestamp, exchange)
         window = IntervalWindow(
             horizon=horizon,
             start_timestamp=fixed.start_timestamp,
@@ -90,10 +89,17 @@ class IntervalService:
             ticker, _ = self.adapter.ticker(asset, market_type)
         except Exception:
             ticker = candles[-1].close
-        calibration = self.storage.active_calibration(asset, market_type, horizon)
+
+        # Existing calibration records are Binance-specific. Never apply one to
+        # Coinbase proxy data merely because the asset and horizon match.
+        calibration = (
+            self.storage.active_calibration(asset, market_type, horizon)
+            if exchange == "binance"
+            else None
+        )
         analysis = analyze_interval(
             asset=asset,
-            exchange="binance",
+            exchange=exchange,
             market_type=market_type,
             candles=candles,
             window=window,
@@ -104,11 +110,11 @@ class IntervalService:
         )
         if persist:
             reference_id = self.storage.get_or_create_reference(
-                asset=asset, exchange="binance", market_type=market_type, window=window
+                asset=asset, exchange=exchange, market_type=market_type, window=window
             )
             self.storage.insert_prediction(reference_id, analysis)
             self.storage.data_quality_event(
-                asset=asset, exchange="binance", market_type=market_type,
+                asset=asset, exchange=exchange, market_type=market_type,
                 timestamp=now, status="stale" if batch.data_status.stale else "healthy",
                 score=batch.data_status.score,
                 details=batch.data_status.model_dump(mode="json"),
@@ -117,10 +123,21 @@ class IntervalService:
             self._cache[key] = CacheEntry(time.monotonic(), analysis)
         return analysis
 
-    def resolve_expired(self, asset: str, market_type: MarketType, candles: list[Candle], now_timestamp: int) -> int:
+    def resolve_expired(
+        self,
+        asset: str,
+        market_type: MarketType,
+        candles: list[Candle],
+        now_timestamp: int,
+        *,
+        exchange: str = "binance",
+    ) -> int:
         resolved = 0
         for prediction in self.storage.unresolved_predictions(now_timestamp):
             if prediction["asset"] != asset or prediction["market_type"] != market_type.value:
+                continue
+            prediction_exchange = prediction.get("exchange")
+            if prediction_exchange is not None and prediction_exchange != exchange:
                 continue
             expiry = int(prediction["expiry_timestamp"])
             expiry_candle = next((candle for candle in candles if candle.timestamp == expiry), None)
@@ -150,6 +167,7 @@ class IntervalService:
         batch = self.adapter.candles(asset, market_type, limit=limit)
         return {
             "asset": asset,
+            "exchange": batch.exchange,
             "market_type": market_type.value,
             "timeframe_minutes": 1,
             "candles": [candle.model_dump(mode="json") for candle in batch.candles],
