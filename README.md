@@ -24,9 +24,81 @@ A dependency-light TypeScript research dashboard for BTC-USD with separate 15-mi
 - Baseline directional backtests and calibration buckets
 - Local immutable paper forecast history
 
+## Crypto Interval Analyzer
+
+The repository now also includes a FastAPI-backed fixed-expiry application with the primary tabs `15 MIN`, `1 HOUR`, `CHART`, `SETUPS`, `RESEARCH`, `DATA`, and `SETTINGS`.
+
+The initial implementation provides:
+
+- Fixed UTC quarter-hour and clock-hour interval boundaries
+- Pacific-time display by default, with user-selectable timezone
+- Public Binance spot and perpetual ticker and completed one-minute candles
+- Immutable interval references, predictions, feature snapshots, and separately stored outcomes
+- Separate direction, reversion, continuation, and uncertainty outputs
+- Calibrated probabilities only after an explicit sample and Brier-skill gate
+- Charted expiry boundaries and interval reference levels
+- Explicit order-block definitions, validation-only entry-depth selection, randomized null models, and day/block bootstrap
+
+Run the combined Interval Analyzer and Research Lab:
+
+```bash
+cd backend
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn app.interval_main:app --reload --port 8000
+```
+
+Open `http://localhost:8000/interval`. Detailed implementation notes and current limitations are documented in [`INTERVAL_ANALYZER.md`](INTERVAL_ANALYZER.md).
+
+## Strategy Research and Validation Lab
+
+The repository also contains a separate FastAPI research service and dashboard for rigorous, chronological strategy validation. It does not replace the existing browser analyzer.
+
+Initial supported scope:
+
+- Assets: BTCUSDT and ETHUSDT
+- Venue: Binance
+- Markets: spot and perpetual futures
+- Prediction horizons: 15 minutes and 1 hour
+- Strategies: regression-channel reversion, Regression Extreme Absorption, VWAP reversion, simple momentum, and breakout/retest
+
+Research controls include:
+
+- Versioned mathematical strategy definitions and parameter schemas
+- Immutable datasets and experiments with reproducibility hashes
+- UTC data-integrity validation and feature availability timestamps
+- Rolling or expanding walk-forward folds
+- Purging and embargo for overlapping label and holding windows
+- Realistic fees, spread, slippage, latency, partial-fill and funding assumptions
+- Baseline and ablation comparisons
+- In-sample versus out-of-sample degradation
+- Parameter-neighborhood robustness maps
+- Ordinary and block bootstrap stress tests
+- Benjamini-Hochberg, approximate Deflated Sharpe, and PBO diagnostics
+- Background jobs with progress and cancellation
+- JSON and CSV exports
+- No fabricated market results, probabilities, rankings, or validation counts
+
+Run the Research Lab alone:
+
+```bash
+cd backend
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --port 8000
+```
+
+Open `http://localhost:8000/research`. API documentation is available at `http://localhost:8000/docs`.
+
+The Research Lab starts with **NO COMPLETED EXPERIMENTS**. Import completed-candle data through the API before running an experiment.
+
 ## Important data distinction
 
-The current static build uses public Coinbase price/candle data. It does **not** fabricate:
+The static browser build uses public Coinbase price/candle data. It does **not** fabricate:
 
 - Level 2 order-book imbalance or CVD
 - Funding, open interest, basis, or liquidations
@@ -34,14 +106,13 @@ The current static build uses public Coinbase price/candle data. It does **not**
 - Real prediction-market bids, asks, depth, or historical contract prices
 - Cross-exchange, on-chain, news, or macro-event features
 
-Those ideas are displayed as future adapters so they can be compared without being misrepresented as live inputs.
+The Interval Analyzer uses public Binance REST market data in its first phase. It does not represent REST polling as a native exchange WebSocket or sequence-checked L2 collector.
 
-## Run locally
+## Run the original static analyzer
 
 The compiled JavaScript is included.
 
 ```bash
-cd btc-15m-analyzer
 python3 -m http.server 4173
 ```
 

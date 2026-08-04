@@ -1,3 +1,8 @@
 node_modules/
 .DS_Store
 *.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+backend/.venv/
+backend/data/
