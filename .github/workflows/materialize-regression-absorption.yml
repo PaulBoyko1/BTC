@@ -1,0 +1,88 @@
+name: Materialize Regression Extreme Absorption
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".rea-v2-trigger"
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out verified transport branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/regression-extreme-absorption
+          fetch-depth: 0
+
+      - name: Reconstruct exact source archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          base64 --decode .rea-import/double-test > /tmp/part-03-1-1
+          cat \
+            .rea-import/part-00 \
+            .rea-import/part-01 \
+            .rea-import/part-02 \
+            .rea-import/part-03-0 \
+            .rea-import/part-03-1-0 \
+            /tmp/part-03-1-1 \
+            .rea-import/part-03-1-2 \
+            .rea-import/part-03-2 \
+            .rea-import/part-04 \
+            .rea-import/part-05 \
+            .rea-import/part-06 \
+            .rea-import/part-07 \
+            .rea-import/part-08-0 \
+            .rea-import/part-08-1 \
+            .rea-import/part-08-2 \
+            .rea-import/part-09-0 \
+            .rea-import/part-09-1 \
+            .rea-import/part-09-2 \
+            .rea-import/part-10-0 \
+            .rea-import/part-10-1 \
+            .rea-import/part-10-2 \
+            .rea-import/part-11-0 \
+            .rea-import/part-11-1 \
+            .rea-import/part-11-2 \
+            .rea-import/part-12 \
+            | base64 --decode > /tmp/rea-update.zip
+          echo "25d440acf3b9ec34921e05247f2cce66e7aa7d6ab1ed9fc80fae610d52ffc5c6  /tmp/rea-update.zip" | sha256sum --check
+          unzip -qo /tmp/rea-update.zip -d .
+          rm -rf .rea-import .github/workflows/import-regression-absorption.yml
+
+      - name: Verify frontend
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm install
+      - run: npm run check
+      - run: npm run build
+
+      - name: Verify backend
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - run: python -m pip install --upgrade pip
+      - run: pip install -r backend/requirements-dev.txt
+      - run: PYTHONPATH=backend pytest -q backend/tests
+      - run: python -m compileall -q backend/app
+
+      - name: Create one clean feature commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --mixed origin/main
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Add Regression Extreme Absorption module"
+          git push --force origin HEAD:feature/regression-extreme-absorption-v2
